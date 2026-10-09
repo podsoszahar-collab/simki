@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Симки</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#0d0d0f;--card:#1a1a1f;--c2:#232329;--green:#4ade80;--gold:#eab308;--purple:#a855f7;--blue:#3b82f6;--red:#ef4444;--text:#fff;--dim:#888}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;padding:12px;padding-bottom:80px}
+.header{display:flex;justify-content:space-between;align-items:center;background:var(--card);padding:12px 16px;border-radius:16px;margin-bottom:12px}
+.user{display:flex;gap:10px;align-items:center}
+.avatar{width:42px;height:42px;background:linear-gradient(135deg,var(--green),var(--blue));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold}
+.uname{font-weight:600;font-size:14px}
+.ulevel{font-size:11px;color:var(--dim)}
+.bal{text-align:right}
+.bal-l{font-size:10px;color:var(--dim);text-transform:uppercase}
+.bal-v{font-size:18px;font-weight:800;color:var(--green)}
+.tabs{display:flex;gap:6px;background:var(--card);padding:6px;border-radius:14px;margin-bottom:16px;overflow-x:auto}
+.tab{flex:1;min-width:60px;padding:10px 6px;background:transparent;border:none;color:var(--dim);font-size:11px;font-weight:600;border-radius:10px;cursor:pointer}
+.tab.active{background:var(--green);color:#000}
+.content{display:none;animation:fade .3s}
+.content.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
+.sim-card{width:300px;height:190px;background:linear-gradient(135deg,#2a2a35,#15151a);border:2px solid #333;border-radius:18px;margin:0 auto 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;transition:.4s}
+.sim-card.rare{border-color:var(--blue);box-shadow:0 0 30px rgba(59,130,246,.5)}
+.sim-card.epic{border-color:var(--purple);box-shadow:0 0 30px rgba(168,85,247,.6)}
+.sim-card.legendary{border-color:var(--gold);box-shadow:0 0 40px rgba(234,179,8,.7)}
+.sim-card.mythic{border-color:#ff0080;box-shadow:0 0 50px rgba(255,0,128,.9);animation:pulse 2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 80px rgba(255,0,128,1)}}
+.chip{width:50px;height:40px;background:linear-gradient(135deg,#fbbf24,#d97706);border-radius:6px;position:absolute;top:20px;left:20px}
+.chip::after{content:'';position:absolute;inset:5px;border:1px solid rgba(0,0,0,.3);border-radius:3px}
+.num{font-size:22px;font-weight:800;letter-spacing:1px;margin-top:30px;font-variant-numeric:tabular-nums}
+.op{font-size:13px;color:var(--dim);margin-top:4px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:16px;min-height:30px}
+.tag{background:rgba(255,255,255,.08);padding:5px 10px;border-radius:12px;font-size:11px}
+.btn{width:100%;max-width:300px;padding:16px;font-size:16px;font-weight:700;border:none;border-radius:14px;background:linear-gradient(90deg,var(--green),#22c55e);color:#000;cursor:pointer;display:block;margin:0 auto}
+.btn:disabled{background:#333;color:#666}
+.btn.red{background:linear-gradient(90deg,#ef4444,#dc2626);color:#fff}
+.btn.gold{background:linear-gradient(90deg,#eab308,#ca8a04);color:#000}
+select,input{width:100%;max-width:300px;padding:12px;background:var(--card);border:1px solid #333;border-radius:12px;color:#fff;font-size:14px;margin:0 auto 10px;display:block}
+h2{font-size:20px;margin-bottom:12px}
+.inv{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.inv-item{background:var(--card);padding:10px;border-radius:12px;border:1px solid #333}
+.inv-item.rare{border-color:var(--blue)}
+.inv-item.epic{border-color:var(--purple)}
+.inv-item.legendary{border-color:var(--gold)}
+.inv-item.mythic{border-color:#ff0080}
+.inv-num{font-size:12px;font-weight:700;margin-bottom:4px}
+.inv-price{font-size:11px;color:var(--green);margin-bottom:6px}
+.inv-sell{width:100%;padding:6px;font-size:11px;background:var(--c2);color:var(--green);border:1px solid var(--green);border-radius:8px;cursor:pointer}
+.tp-row{display:flex;justify-content:space-between;padding:10px;background:var(--card);border-radius:10px;margin-bottom:6px;font-size:13px}
+.tp-rank{font-weight:800;color:var(--gold);margin-right:8px}
+.shop-item{background:var(--card);padding:16px;border-radius:14px;border:1px solid #333;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;cursor:pointer}
+.shop-item.gold{border-color:var(--gold)}
+.shop-item.platinum{border-color:var(--purple)}
+.shop-item h4{font-size:14px;margin-bottom:4px}
+.shop-item p{font-size:11px;color:var(--dim)}
+.shop-price{font-size:16px;font-weight:800;color:var(--gold)}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--c2);padding:14px 24px;border-radius:14px;font-size:13px;opacity:0;transition:.3s;z-index:999;border:1px solid #333;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.empty{color:var(--dim);text-align:center;padding:20px;font-size:14px}
+.duel-form{background:var(--card);padding:16px;border-radius:14px;margin-bottom:16px}
+.duel-form label{font-size:12px;color:var(--dim);display:block;margin-bottom:4px}
+.pending-item{background:var(--card);padding:12px;border-radius:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.pending-item button{padding:8px 14px;background:var(--green);color:#000;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="user">
+    <div class="avatar" id="avatar">?</div>
+    <div><div class="uname" id="uname">Загрузка...</div><div class="ulevel" id="ulevel">Ур. 1</div></div>
+  </div>
+  <div class="bal"><div class="bal-l">Баланс</div><div class="bal-v" id="balance">0 ₽</div></div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="spin">🎰 Крутка</button>
+  <button class="tab" data-tab="garage">📦 Гараж</button>
+  <button class="tab" data-tab="duel">⚔️ Дуэли</button>
+  <button class="tab" data-tab="top">🏆 Топ</button>
+  <button class="tab" data-tab="shop">⭐️ Донат</button>
+  <button class="tab" data-tab="profile">👤 Профиль</button>
+</div>
+
+<!-- КРУТКА -->
+<div class="content active" id="tab-spin">
+  <div class="sim-card" id="simCard">
+    <div class="chip"></div>
+    <div class="num" id="spinNum">+7 999 123-45-67</div>
+    <div class="op" id="spinOp">МТС</div>
+  </div>
+  <div class="tags" id="spinTags"><div class="tag">Нажми «Крутить»</div></div>
+  <select id="country">
+    <option value="Россия">🇷🇺 Россия</option>
+    <option value="Казахстан">🇰🇿 Казахстан</option>
+    <option value="ОАЭ">🇦🇪 ОАЭ</option>
+    <option value="США">🇺🇸 США</option>
+    <option value="Германия">🇩🇪 Германия</option>
+  </select>
+  <button class="btn" id="spinBtn">🎲 Крутить (1 000 ₽)</button>
+</div>
+
+<!-- ГАРАЖ -->
+<div class="content" id="tab-garage">
+  <h2>📦 Мой Гараж</h2>
+  <div class="inv" id="inv"><p class="empty">Загрузка...</p></div>
+</div>
+
+<!-- ДУЭЛИ -->
+<div class="content" id="tab-duel">
+  <h2>⚔️ Дуэли</h2>
+  <div class="duel-form">
+    <label>ID оппонента (можно узнать в профиле):</label>
+    <input type="number" id="oppId" placeholder="123456789">
+    <label>Ставка (₽), минимум 1 000:</label>
+    <input type="number" id="betAmt" value="10000">
+    <button class="btn red" id="createDuelBtn">⚔️ Бросить вызов</button>
+  </div>
+  <h2>Входящие вызовы</h2>
+  <div id="incoming"><p class="empty">Нет вызовов</p></div>
+  <h2>Мои вызовы</h2>
+  <div id="outgoing"><p class="empty">Нет вызовов</p></div>
+</div>
+
+<!-- ТОП -->
+<div class="content" id="tab-top">
+  <h2>🏆 Топ-10 игроков</h2>
+  <div id="topList"><p class="empty">Загрузка...</p></div>
+</div>
+
+<!-- ДОНАТ -->
+<div class="content" id="tab-shop">
+  <h2>⭐️ Поддержать проект</h2>
+  <p style="color:#888;font-size:12px;margin-bottom:16px">Все звёзды идут на развитие Симок</p>
+  <div id="shopList"></div>
+</div>
+
+<!-- ПРОФИЛЬ -->
+<div class="content" id="tab-profile">
+  <h2>👤 Профиль</h2>
+  <div class="duel-form">
+    <p style="font-size:14px;margin-bottom:8px">Твой ID: <b id="myId">—</b></p>
+    <p style="font-size:14px;margin-bottom:8px">Донат: <b id="myStars">0</b> ⭐️</p>
+    <p style="font-size:14px;margin-bottom:16px">Уровень спонсора: <b id="mySponsor">нет</b></p>
+    <button class="btn gold" id="dailyBtn">🎁 Забрать бонус (10 000 ₽)</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+const API = "https://charcoal-doodle-reggae.ngrok-free.dev"; // ЗАМЕНИ на адрес своего сервера!
+const UID = tg.initDataUnsafe?.user?.id;
+const UNAME = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || "Игрок";
+
+function money(n){return (n||0).toLocaleString("ru-RU") + " ₽";}
+function toast(msg){const t=document.getElementById("toast");t.innerText=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2500);}
+
+async function api(path, method="GET", body=null){
+  const opts={method, headers:{"Content-Type":"application/json"}};
+  if(body) opts.body=JSON.stringify(body);
+  const r=await fetch(API+path, opts);
+  if(!r.ok){const e=await r.json();throw new Error(e.detail||"Ошибка");}
+  return r.json();
+}
+
+function rarityCls(r){return{"Редкая":"rare","Эпическая":"epic","Легендарная":"legendary","Мифическая":"mythic"}[r]||"";}
+
+async function loadUser(){
+  try{
+    const u = await api(`/api/user/${UID}?username=${encodeURIComponent(UNAME)}&first_name=${encodeURIComponent(UNAME)}`);
+    document.getElementById("balance").innerText=money(u.balance);
+    document.getElementById("uname").innerText=UNAME;
+    document.getElementById("avatar").innerText=(UNAME||"?")[0].toUpperCase();
+    document.getElementById("myId").innerText=UID;
+    document.getElementById("myStars").innerText=u.stars_donated||0;
+    document.getElementById("mySponsor").innerText=u.sponsor_level||"нет";
+  }catch(e){toast(e.message);}
+}
+
+async function spin(){
+  const btn=document.getElementById("spinBtn");
+  btn.disabled=true; btn.innerText="🎲 Генерация...";
+  try{
+    const country=document.getElementById("country").value;
+    const d=await api("/api/spin","POST",{user_id:UID,country});
+    const s=d.sim;
+    document.getElementById("spinNum").innerText=s.number;
+    document.getElementById("spinOp").innerText=s.operator;
+    document.getElementById("balance").innerText=money(d.balance);
+    document.getElementById("spinTags").innerHTML=s.tags.map(t=>`<div class="tag">${t}</div>`).join("");
+    const card=document.getElementById("simCard");
+    card.className="sim-card "+rarityCls(s.rarity);
+    if(tg.HapticFeedback){
+      if(s.rarity==="Мифическая"||s.rarity==="Легендарная") tg.HapticFeedback.notificationOccurred("success");
+      else tg.HapticFeedback.impactOccurred("medium");
+    }
+  }catch(e){toast(e.message);}
+  btn.disabled=false; btn.innerText="🎲 Крутить (1 000 ₽)";
+}
+
+async function loadInv(){
+  try{
+    const d=await api(`/api/inventory/${UID}`);
+    const el=document.getElementById("inv");
+    if(!d.sims.length){el.innerHTML='<p class="empty">Пусто. Крути симки!</p>';return;}
+    el.innerHTML=d.sims.map(s=>`
+      <div class="inv-item ${rarityCls(s.rarity)}">
+        <div class="inv-num">${s.number}</div>
+        <div class="inv-price">${money(s.price)}</div>
+        <button class="inv-sell" onclick="sellSim(${s.id})">Продать</button>
+      </div>`).join("");
+  }catch(e){toast(e.message);}
+}
+
+async function sellSim(id){
+  try{
+    const d=await api(`/api/sell/${id}?user_id=${UID}`,"POST");
+    toast(`Продано за ${money(d.earned)}`);
+    document.getElementById("balance").innerText=money(d.balance);
+    loadInv();
+  }catch(e){toast(e.message);}
+}
+
+async function createDuel(){
+  const opp=parseInt(document.getElementById("oppId").value);
+  const bet=parseInt(document.getElementById("betAmt").value);
+  if(!opp||!bet) return toast("Заполни все поля");
+  try{
+    const d=await api("/api/duel/create","POST",{challenger_id:UID,opponent_id:opp,bet_amount:bet});
+    toast(`Вызов создан! ID: ${d.duel_id}`);
+    loadUser();
+  }catch(e){toast(e.message);}
+}
+
+async function loadDuels(){
+  try{
+    const d=await api(`/api/duel/pending/${UID}`);
+    const inc=document.getElementById("incoming");
+    inc.innerHTML = d.incoming.length ? d.incoming.map(x=>`
+      <div class="pending-item">
+        <div>От #${x.challenger_id}<br><small>${money(x.bet_amount)}</small></div>
+        <button onclick="acceptDuel(${x.id})">Принять</button>
+      </div>`).join("") : '<p class="empty">Нет вызовов</p>';
+    const out=document.getElementById("outgoing");
+    out.innerHTML = d.outgoing.length ? d.outgoing.map(x=>`
+      <div class="pending-item"><div>Кому #${x.opponent_id}<br><small>${money(x.bet_amount)}</small></div><div style="color:#888">Ожидание</div></div>`).join("") : '<p class="empty">Нет вызовов</p>';
+  }catch(e){}
+}
+
+async function acceptDuel(id){
+  try{
+    const d=await api("/api/duel/accept","POST",{user_id:UID,duel_id:id});
+    const res = d.winner_id===UID?"🎉 Победа!":"😢 Поражение";
+    toast(`${res} ${d.challenger_rolls.join("+")}=${d.challenger_sum} vs ${d.opponent_rolls.join("+")}=${d.opponent_sum}`);
+    document.getElementById("balance").innerText=money(d.balance);
+    loadDuels();
+  }catch(e){toast(e.message);}
+}
+
+async function loadTop(){
+  try{
+    const d=await api("/api/top");
+    document.getElementById("topList").innerHTML=d.top.map((u,i)=>`
+      <div class="tp-row"><span><span class="tp-rank">#${i+1}</span>${u.first_name||u.username||"Аноним"}</span><span style="color:#4ade80;font-weight:700">${money(u.balance)}</span></div>`).join("");
+  }catch(e){}
+}
+
+const SHOP=[
+  {id:"support_50",title:"50 ⭐️",desc:"+100 000 ₽",stars:50},
+  {id:"support_150",title:"150 ⭐️",desc:"+500 000 ₽",stars:150},
+  {id:"support_500",title:"500 ⭐️ Gold",desc:"+3 000 000 ₽ + Золотой статус",stars:500,cls:"gold"},
+  {id:"support_1500",title:"1500 ⭐️ Platinum",desc:"+10 000 000 ₽ + Платиновый статус",stars:1500,cls:"platinum"},
+];
+
+function renderShop(){
+  document.getElementById("shopList").innerHTML=SHOP.map(s=>`
+    <div class="shop-item ${s.cls||''}" onclick="buy('${s.id}')">
+      <div><h4>${s.title}</h4><p>${s.desc}</p></div>
+      <div class="shop-price">⭐️ ${s.stars}</div>
+    </div>`).join("");
+}
+
+async function buy(pkg){
+  try{
+    const d=await api("/api/donate/create","POST",{user_id:UID,package:pkg});
+    tg.openInvoice(d.invoice_link,st=>{
+      if(st==="paid"){toast("🎉 Спасибо!");loadUser();}
+      else if(st==="cancelled") toast("Отменено");
+      else toast("Ошибка");
+    });
+  }catch(e){toast(e.message);}
+}
+
+async function daily(){
+  try{
+    const d=await api(`/api/daily/${UID}`,"POST");
+    toast(`🎁 +${money(d.bonus)}`);
+    document.getElementById("balance").innerText=money(d.balance);
+  }catch(e){toast(e.message);}
+}
+
+// Навигация
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".content").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("tab-"+t.dataset.tab).classList.add("active");
+    if(t.dataset.tab==="garage") loadInv();
+    if(t.dataset.tab==="duel") loadDuels();
+    if(t.dataset.tab==="top") loadTop();
+    if(t.dataset.tab==="shop") renderShop();
+    if(t.dataset.tab==="profile") loadUser();
+  });
+});
+
+document.getElementById("spinBtn").onclick=spin;
+document.getElementById("createDuelBtn").onclick=createDuel;
+document.getElementById("dailyBtn").onclick=daily;
+
+loadUser();
+setInterval(loadDuels, 10000);
+</script>
+</body>
+</html>
